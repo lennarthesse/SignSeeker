@@ -5,10 +5,7 @@ import numpy as np
 import csv
 import glob
 
-import unicodedata
-import urllib.parse
-
-from utils import MP_model
+from utils import MP_model, Video, normalize_name
 from utils import draw_landmarks_on_image
 
 NUM_LANDMARKS = 21
@@ -66,7 +63,7 @@ def build_row_frame(result, frame: int, video_name: str) -> list:
     """
     return []
 
-def build_row_mean_std(results, label: str) -> list:
+def build_row_mean_std(results: Video, label: str) -> list:
     """
     :param results: The collected results from a detection run on a video.
     :type results: list[HandLandmarkerResult]
@@ -84,7 +81,7 @@ def build_row_mean_std(results, label: str) -> list:
 
     slots = [[], []]
 
-    for result in results:
+    for result in results.landmarker_results:
         # skip empty results
         if len(result.hand_world_landmarks) == 0:
             continue
@@ -140,26 +137,6 @@ def build_row_mean_std(results, label: str) -> list:
 
     all_features.append(label)
     return all_features
-
-def normalize_name(name: str) -> str:
-    """
-    Normalizes a file name by replacing %xx escapes by their single-character
-    equivalent and certain special characters and normalizing unicode characters.
-    
-    :param name: The name to normalize.
-    :type name: str
-    :return: The normalized name.
-    :rtype: str
-    """
-    name = os.path.basename(name)
-    name = urllib.parse.unquote(name)
-    name = unicodedata.normalize("NFKC", name)
-    name = (
-        name.replace("•", "")
-            .replace(" ", "_")
-            .replace("/", "_")
-    )
-    return name.lower()
 
 def build_video_lookup(csv_path: str) -> dict:
     lookup = {}
@@ -239,6 +216,8 @@ if __name__ == "__main__":
         cap.release()
         cv2.destroyAllWindows()
 
-        csv_writer.writerow(build_row_mean_std(results, label.lower()))
+        video = Video(results)
+
+        csv_writer.writerow(build_row_mean_std(video, label.lower()))
 
     csv_file.close()

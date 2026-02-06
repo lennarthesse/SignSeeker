@@ -1,4 +1,10 @@
-#import cv2
+from typing import List, Dict
+import shutil
+import csv
+import os
+import unicodedata
+import urllib.parse
+import pathlib
 
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
@@ -11,6 +17,79 @@ HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 HandLandmarkerResult = mp.tasks.vision.HandLandmarkerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
+
+
+WORDS = ["hello", "learn", "sign", "language", "america", "like", "fun", "and", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "what", "who", "where", "how", "good", "bad", "you"]
+
+
+def filter_video_list(video_list: str, words: List[str]) -> None:
+    filtered_list: Dict[str, str] = {}
+
+    with open(video_list, newline="", encoding="utf-8") as input_file:
+        reader = csv.DictReader(input_file)
+
+        for row in reader:
+            video = row.get("videos")
+            word = row.get("word")
+
+            if not (video and word):
+                continue
+
+            if word in words:
+                filtered_list[video] = word
+
+    with open("filtered_list.csv", "w", newline="", encoding="utf-8") as output_file:
+        writer = csv.DictWriter(output_file, fieldnames=["videos", "word"])
+        writer.writeheader()
+        
+        for video, word in filtered_list.items():
+            writer.writerow({"videos": video, "word": word})
+
+
+def copy_videos():
+    VIDEO_LIST = "app/input/filtered_labels.csv"
+    INPUT_DIR = pathlib.Path("app/input/all_videos")
+    OUTPUT_DIR = pathlib.Path("app/output/filtered_videos")
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    with open(VIDEO_LIST, newline="", encoding="utf-8") as csv_file:
+        reader = csv.DictReader(csv_file)
+        for row in reader:
+            raw_filename = row.get("videos")
+
+            if not raw_filename:
+                continue
+
+            filename = normalize_name(raw_filename)
+
+            shutil.copy2(os.path.join(INPUT_DIR, filename), os.path.join(OUTPUT_DIR, filename))
+
+
+def normalize_name(name: str) -> str:
+    """
+    Normalizes a file name by replacing %xx escapes by their single-character
+    equivalent and certain special characters and normalizing unicode characters.
+    
+    :param name: The name to normalize.
+    :type name: str
+    :return: The normalized name.
+    :rtype: str
+    """
+    name = os.path.basename(name)
+    name = urllib.parse.unquote(name)
+    name = unicodedata.normalize("NFKC", name)
+    name = (
+        name.replace("•", "")
+            .replace(" ", "_")
+            .replace("/", "_")
+    )
+    return name.lower()
+
+
+class Video:
+    def __init__(self, landmarker_results: List[HandLandmarkerResult]) -> None: # type: ignore
+        self.landmarker_results = landmarker_results
+
 
 class MP_model:
     def __init__(self, path_to_model: str):
@@ -48,21 +127,6 @@ class MP_model:
         
         self.landmarker = HandLandmarker.create_from_options(options)
 
-    """
-    def init_image(self, image_path):
-        options = HandLandmarkerOptions(
-            base_options=BaseOptions(model_asset_path=self.model_path),
-            running_mode=VisionRunningMode.IMAGE,
-            num_hands=2)
-        self.landmarker = HandLandmarker.create_from_options(options)
-
-        image = mp.Image.create_from_file(image_path)
-        result = self.landmarker.detect(image)
-        print(result)
-        annotated_image = draw_landmarks_on_image(image.numpy_view(), result)
-        cv2.imshow("test", annotated_image)
-        cv2.waitKey()
-    """
 
 def draw_landmarks_on_image(rgb_image, detection_result):
     MARGIN = 10  # pixels

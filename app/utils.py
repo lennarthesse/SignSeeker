@@ -48,22 +48,27 @@ def filter_video_list(video_list: str, words: List[str]) -> None:
 
 def copy_videos():
     VIDEO_LIST = "app/input/filtered_labels.csv"
-    INPUT_DIR = pathlib.Path("app/input/all_videos")
+    INPUT_DIR = pathlib.Path("/media/lennart/Data/Files/Documents/Studium/HS Harz/5. Semester/Jahresprojekt/datasets/all_videos")
     OUTPUT_DIR = pathlib.Path("app/output/filtered_videos")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    not_found = 0
 
     with open(VIDEO_LIST, newline="", encoding="utf-8") as csv_file:
         reader = csv.DictReader(csv_file)
         for row in reader:
-            raw_filename = row.get("videos")
+            filename = row.get("videos")
 
-            if not raw_filename:
+            if not filename:
                 continue
 
-            filename = normalize_name(raw_filename)
-
-            shutil.copy2(os.path.join(INPUT_DIR, filename), os.path.join(OUTPUT_DIR, filename))
-
+            try:
+                shutil.copy2(os.path.join(INPUT_DIR, filename), os.path.join(OUTPUT_DIR, filename))
+            except FileNotFoundError:
+                print(f"[WARNING] Couldn't find file with name {filename}")
+                not_found += 1
+    
+    print(f"Done! Skipped {not_found} files because they were not found")
 
 def normalize_name(name: str) -> str:
     """

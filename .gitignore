@@ -1,6 +1,6 @@
 # ignore input and validation image/video files
-app/output/*.jpg
-app/output/*.mp4
+app/output/
+app/input/filtered_videos/
 app/input/*.mp4
 app/input/*.jpg
 

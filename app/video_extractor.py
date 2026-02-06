@@ -4,15 +4,30 @@ import mediapipe as mp
 import numpy as np
 import csv
 import glob
+from typing import List, Any, Tuple
 
 from utils import MP_model, Video, normalize_name
 from utils import draw_landmarks_on_image
 
-NUM_LANDMARKS = 21
+LANDMARK_INDICES = [
+     5,  8,
+     9, 12,
+    13, 16,
+    17, 20,
+     1,  4
+]
+HANDS = ["l", "r"]
+COORDS = ["x", "y", "z"]
 STATS = ["mean", "std"]
+LEFT_SLOT = 0
+RIGHT_SLOT = 1
+FILL_VALUE = -11111111
+INPUT_DIR = "input"
+MODEL_FILE = "hand_landmarker.task"
+
 
 def convert_frame_to_mp_image(frame) -> mp.Image:
-    # Convert frame to BGR for better recognition?
+    # Convert frame to BGR for better recognition (i think)
     frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
     # Convert the frame to a MediaPipe Image object
@@ -21,76 +36,51 @@ def convert_frame_to_mp_image(frame) -> mp.Image:
         data=frame_bgr
     )
 
-def build_header_frame() -> list:
-    hands = ["l", "r"]
-    coords = ["x", "y", "z"]
 
+def build_header_mean_std() -> List[Any]:
     header = []
 
-    for hand in hands:
-        for landmark_idx in range(NUM_LANDMARKS):
-            for coord in coords:
-                header.append(f"{hand}_{coord}_{landmark_idx}")
-
-    return header
-
-def build_header_mean_std() -> list:
-    hands = ["l", "r"]
-    coords = ["x", "y", "z"]
-
-    header = []
-
-    for hand in hands:
-        for landmark_idx in range(NUM_LANDMARKS):
-            for coord in coords:
+    for hand in HANDS:
+        for landmark_idx in range(len(LANDMARK_INDICES)):
+            for coord in COORDS:
                 for stat in STATS:
                     header.append(f"{hand}_{coord}_{landmark_idx}_{stat}")
+    
+    for hand in HANDS:
+        for coord in COORDS:
+            for stat in STATS:
+                header.append(f"{hand}_root_{coord}_{stat}")
+
+    header.append("label")
 
     return header
 
-def build_row_frame(result, frame: int, video_name: str) -> list:
-    """
-    Builds a CSV row for a single frame in a video containing the extracted landmarks, the frame index in the video, and the name of the video for grouping data by videos (and thus labels).
-    
-    :param result: The MediaPipe HandLandmarkerResult containing landmark coordinates, handedness and more.
-    :type result: HandLandmarkerResult
-    :param frame: The index of the frame in the video.
-    :type frame: int
-    :param video_name: The name of the video the frame is from.
-    :type video_name: str
-    :return: A list corresponding to a row in the CSV file, containing the extracted landmarks, frame index, and associated video.
-    :rtype: list[Any]
-    """
-    return []
 
-def build_row_mean_std(results: Video, label: str) -> list:
-    """
-    :param results: The collected results from a detection run on a video.
-    :type results: list[HandLandmarkerResult]
+def build_row_mean_std(vid: Video) -> List[Any]:
+    slots, root_slots = _get_slots(vid)
 
-    :param label: The corresponding label for the data in this video.
-    :type label: str
+    row = _aggregate_features(slots, root_slots)
+    row.append(vid.label)
 
-    :return: A list with aggregated data for each coordinate of each landmark.
-    :rtype: list[Any]
-    """
+    return row
 
-    LEFT_SLOT = 0
-    RIGHT_SLOT = 1
-    FILL_VALUE = -11111111
 
+def _get_slots(video: Video) -> Tuple[List[Any], List[Any]]:
     slots = [[], []]
+    root_slots = [[], []]
 
-    for result in results.landmarker_results:
+    for landmarker_result in video.landmarker_results:
         # skip empty results
-        if len(result.hand_world_landmarks) == 0:
+        if len(landmarker_result.hand_world_landmarks) == 0:
             continue
 
         # assign landmarks in result to either left or right hand
-        assignment = [None, None] 
-        for i in range(len(result.hand_world_landmarks)):
-            landmarks = result.hand_world_landmarks[i]
-            handedness = result.handedness[i][0].category_name
+        assignment = [None, None]       # this is a list of List[Landmark]      (list of landmarks of an entire hand)
+        root_assignment = [None, None]  # this is a list of NormalizedLandmark  (list of root landmarks)
+        for hand_idx in range(len(landmarker_result.hand_world_landmarks)):
+            landmarks = landmarker_result.hand_world_landmarks[hand_idx]
+            root_landmark = landmarker_result.hand_landmarks[hand_idx][0]
+            handedness = landmarker_result.handedness[hand_idx][0].category_name
 
             # decide preferred slot
             preferred_slot = LEFT_SLOT if handedness.lower() == "left" else RIGHT_SLOT
@@ -102,41 +92,78 @@ def build_row_mean_std(results: Video, label: str) -> list:
                 if assignment[other_slot] is None:
                     assignment[other_slot] = landmarks
 
+            if root_assignment[preferred_slot] is None:
+                root_assignment[preferred_slot] = root_landmark
+            else:
+                other_slot = RIGHT_SLOT if preferred_slot == LEFT_SLOT else LEFT_SLOT
+                if root_assignment[other_slot] is None:
+                    root_assignment[other_slot] = root_landmark
+
         # collect results of left hands
         if assignment[LEFT_SLOT] is not None:
             slots[LEFT_SLOT].append(assignment[LEFT_SLOT])
+        if root_assignment[LEFT_SLOT] is not None:
+            root_slots[LEFT_SLOT].append(root_assignment[LEFT_SLOT])
 
         # collect results of right hands
         if assignment[RIGHT_SLOT] is not None:
             slots[RIGHT_SLOT].append(assignment[RIGHT_SLOT])
+        if root_assignment[RIGHT_SLOT] is not None:
+            root_slots[RIGHT_SLOT].append(root_assignment[RIGHT_SLOT])
+    
+    return slots, root_slots
 
+
+def _aggregate_features(slots: List[Any], root_slots: List[Any]) -> List[Any]:
     # aggregate mean, min, max for each coordinate
-    all_features = []
+    features = []
+
     for slot in slots:
         if len(slot) == 0:
             # fill with fill value if no hand was detected in the entire video
-            all_features.extend([FILL_VALUE] * NUM_LANDMARKS * 3 * len(STATS))
+            features.extend([FILL_VALUE] * len(LANDMARK_INDICES) * len(COORDS) * len(STATS))
             continue
 
-        buckets = [{"x": [], "y": [], "z": []} for _ in range(NUM_LANDMARKS)]
+        buckets = [{"x": [], "y": [], "z": []} for _ in range(len(LANDMARK_INDICES))]
 
         for landmarks in slot:
             for idx, landmark in enumerate(landmarks):
-                buckets[idx]["x"].append(landmark.x)
-                buckets[idx]["y"].append(landmark.y)
-                buckets[idx]["z"].append(landmark.z)
+                if idx in LANDMARK_INDICES:
+                    buckets[idx]["x"].append(landmark.x)
+                    buckets[idx]["y"].append(landmark.y)
+                    buckets[idx]["z"].append(landmark.z)
 
-        for bucket in buckets:
-            for coord in ("x", "y", "z"):
-                values = np.array(bucket[coord])
-                # replace values.min() and .max() with values.std() for use with standard deviation. also adjust the STATS constant!
-                all_features.extend([
-                    values.mean(),
-                    values.std()
-                ])
+        for idx, bucket in enumerate(buckets):
+            if idx in LANDMARK_INDICES:
+                for coord in COORDS:
+                    values = np.array(bucket[coord])
+                    # replace values.min() and .max() with values.std() for use with standard deviation. also adjust the STATS constant!
+                    features.extend([
+                        values.mean(),
+                        values.std()
+                    ])
+        
+    for root_slot in root_slots:
+        if len(root_slot) == 0:
+            features.extend([FILL_VALUE] * len(COORDS) * len(STATS))
+            continue
+        
+        bucket = {"x": [], "y": [], "z": []}
 
-    all_features.append(label)
-    return all_features
+        for landmark in root_slot:
+            bucket["x"].append(landmark.x)
+            bucket["y"].append(landmark.y)
+            bucket["z"].append(landmark.z)
+
+        for coord in COORDS:
+            values = np.array(bucket[coord])
+            features.extend([
+                values.mean(),
+                values.std()
+            ])
+
+    return features
+
 
 def build_video_lookup(csv_path: str) -> dict:
     lookup = {}
@@ -159,14 +186,12 @@ def build_video_lookup(csv_path: str) -> dict:
     return lookup
 
 if __name__ == "__main__":
-    INPUT_DIR = "input"
-
     files = os.scandir(INPUT_DIR) 
     file_count = len(glob.glob(INPUT_DIR + "/*.mp4"))
     file_idx = 1
     time = 0 # continuously running index to satisfy mediapipes need for a timestamp
 
-    model = MP_model("hand_landmarker.task")
+    model = MP_model(MODEL_FILE)
     model.init_video()
 
     # Initialize CSV file and writer and write the header row 
@@ -216,8 +241,8 @@ if __name__ == "__main__":
         cap.release()
         cv2.destroyAllWindows()
 
-        video = Video(results)
+        v = Video(file.name, results, label)
 
-        csv_writer.writerow(build_row_mean_std(video, label.lower()))
+        csv_writer.writerow(build_row_mean_std(v))
 
     csv_file.close()

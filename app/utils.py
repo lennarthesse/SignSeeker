@@ -92,8 +92,15 @@ def normalize_name(name: str) -> str:
 
 
 class Video:
-    def __init__(self, landmarker_results: List[HandLandmarkerResult]) -> None: # type: ignore
+    def __init__(
+            self,
+            filename: str,
+            landmarker_results: List[HandLandmarkerResult], # type: ignore
+            label: str
+            ) -> None: 
+        self.filename = filename
         self.landmarker_results = landmarker_results
+        self.label = label
 
 
 class MP_model:

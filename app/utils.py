@@ -3,6 +3,8 @@ Utilities for the AI package containing classes like Video or MP_Model
 """
 
 from typing import List
+from enum import Enum
+import threading
 
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
@@ -51,7 +53,12 @@ class Video:
 
 
 class MP_model:
-    def __init__(self, path_to_model: str):
+
+    class RunningMode(Enum):
+        LIVE_STREAM = 0
+        VIDEO = 1
+
+    def __init__(self, path_to_model: str, running_mode: RunningMode):
         """
         Initializes the path to the MediaPipe model for later use in video/image initializations.
         
@@ -59,32 +66,50 @@ class MP_model:
         :type path_to_model: str
         """
         self.model_path = path_to_model
-     
-    def init_livestream(self):
-        """Initializes MediaPipe with VisionRunningMode=LIVE_STREAM."""
 
-        def print_result(result, output_image: mp.Image, timestamp_ms: int):
-            print('hand landmarker result: {}'.format(result))
-            #annotated_image = draw_landmarks_on_image(output_image.numpy_view(), result)
-            #cv2.imshow("imaeg", annotated_image)
-            #cv2.waitKey(1)
+        if running_mode is self.RunningMode.LIVE_STREAM:
+            self.latest_frame = None
+            self.frame_lock = threading.Lock()
 
-        options = HandLandmarkerOptions(
-            base_options=BaseOptions(model_asset_path=self.model_path),
-            running_mode=VisionRunningMode.LIVE_STREAM,
-            result_callback=print_result)
-        
-        self.landmarker = HandLandmarker.create_from_options(options)
-        
-    def init_video(self):
-        """Initializes MediaPipe with VisionRunningMode=VIDEO."""
+            def print_result(result, output_image_rgb: mp.Image, timestamp_ms: int):
+                #print('hand landmarker result: {}'.format(result))
+                annotated_image_rgb = draw_landmarks_on_image(output_image_rgb.numpy_view(), result)
+                with self.frame_lock:
+                    self.latest_frame = annotated_image_rgb
 
-        options = HandLandmarkerOptions(
-            base_options=BaseOptions(model_asset_path=self.model_path),
-            running_mode=VisionRunningMode.VIDEO,
-            num_hands=2)
-        
-        self.landmarker = HandLandmarker.create_from_options(options)
+            options = HandLandmarkerOptions(
+                base_options=BaseOptions(model_asset_path=self.model_path),
+                running_mode=VisionRunningMode.LIVE_STREAM,
+                result_callback=print_result,
+                num_hands=2)
+            
+            self.landmarker = HandLandmarker.create_from_options(options)
+
+        elif running_mode is self.RunningMode.VIDEO:
+            options = HandLandmarkerOptions(
+                base_options=BaseOptions(model_asset_path=self.model_path),
+                running_mode=VisionRunningMode.VIDEO,
+                num_hands=2)
+            
+            self.landmarker = HandLandmarker.create_from_options(options)
+
+
+def convert_frame_to_mp_image(bgr_frame: cv2.typing.MatLike) -> mp.Image:
+    """
+    Convert an OpenCV frame in MatLike format and BGR color to a MediaPipe Image on RGB rolor.
+    
+    :param bgr_frame: BGR Frame in MatLike format
+    :type bgr_rame: MatLike
+    :return: RGB Frame in MediaPipe Image format
+    :rtype: Image
+    """
+    rgb_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+
+    # Convert the frame to a MediaPipe Image object
+    return mp.Image(
+        image_format=mp.ImageFormat.SRGB,
+        data=rgb_frame
+    )
 
 
 def draw_landmarks_on_image(rgb_image, detection_result):

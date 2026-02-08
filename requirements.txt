@@ -1,3 +1,6 @@
 mediapipe
 opencv-python
 joblib
+lightgbm
+scikit-learn
+pandas

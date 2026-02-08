@@ -1,8 +1,10 @@
 import os
-import cv2
-from utils import MP_model
 
+import cv2
 import mediapipe
+
+from app.utils import MP_model
+
 
 def load_files_from_directory(path):
     return os.scandir(path)

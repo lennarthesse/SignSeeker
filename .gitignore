@@ -1,8 +1,8 @@
 # ignore input and validation image/video files
-app/output/
-app/input/filtered_videos/
-app/input/*.mp4
-app/input/*.jpg
+app/extraction/output/
+app/extraction/input/filtered_videos/
+app/extraction/input/*.mp4
+app/extraction/input/*.jpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -8,8 +8,8 @@ from typing import List, Any, Tuple
 
 import joblib
 
-from utils import MP_model, Video, normalize_name
-from utils import draw_landmarks_on_image
+from app.utils import MP_model, Video
+from app.utils import draw_landmarks_on_image
 
 LANDMARK_INDICES = [
      5,  8,

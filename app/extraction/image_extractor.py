@@ -1,13 +1,14 @@
 import os
 import sys
 import csv
-import cv2
-
-from utils import draw_landmarks_on_image
 
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+import cv2
+
+from app.utils import draw_landmarks_on_image
+
 
 if __name__ == "__main__":
     # specify the name of the input directory

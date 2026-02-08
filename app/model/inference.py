@@ -8,7 +8,7 @@ from lightgbm import Booster
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 
-from utils import load_X_y
+from app.model.utils import load_X_y
 
 
 def load_model(model_file: str, encoder_file: str):

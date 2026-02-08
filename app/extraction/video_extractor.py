@@ -1,6 +1,5 @@
 import cv2
 import os
-import mediapipe as mp
 import numpy as np
 import csv
 import glob
@@ -9,7 +8,7 @@ from typing import List, Any, Tuple
 import joblib
 
 from app.utils import MP_model, Video
-from app.utils import draw_landmarks_on_image
+from app.utils import convert_frame_to_mp_image
 
 LANDMARK_INDICES = [
      5,  8,
@@ -29,17 +28,6 @@ INPUT_DIR = "app/input/filtered_videos/"
 OUTPUT_DIR = "app/output/"
 MODEL_LOCATION = "app/hand_landmarker.task"
 LABELS_LOCATION = "app/input/labels.csv"
-
-
-def convert_frame_to_mp_image(frame) -> mp.Image:
-    # Convert frame to BGR for better recognition (i think)
-    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
-    # Convert the frame to a MediaPipe Image object
-    return mp.Image(
-        image_format=mp.ImageFormat.SRGB,
-        data=frame_bgr
-    )
 
 
 def build_header_mean_std() -> List[Any]:
@@ -208,8 +196,7 @@ def extract_and_convert_videos() -> List[Video]:
     file_idx = 1
     time = 0 # continuously running index to satisfy mediapipes need for a timestamp
 
-    model = MP_model(MODEL_LOCATION)
-    model.init_video()
+    model = MP_model(MODEL_LOCATION, MP_model.RunningMode.VIDEO)
 
     video_lookup = build_video_lookup(LABELS_LOCATION)
 

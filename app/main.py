@@ -68,5 +68,7 @@ if __name__ == "__main__":
         N += 1
         time += 1
 
+    # hopefully prevent segmentation error by destroying the mp_model
+    del mp_model
     cap.release()
     cv2.destroyAllWindows()

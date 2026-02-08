@@ -8,7 +8,7 @@ from typing import List, Any, Tuple
 import joblib
 
 from app.utils import MP_model, Video
-from app.utils import convert_frame_to_mp_image
+from app.utils import convert_frame_to_mp_image, draw_landmarks_on_image
 
 LANDMARK_INDICES = [
      5,  8,
@@ -24,10 +24,10 @@ LEFT_SLOT = 0
 RIGHT_SLOT = 1
 FILL_VALUE = -11111111
 
-INPUT_DIR = "app/input/filtered_videos/"
-OUTPUT_DIR = "app/output/"
-MODEL_LOCATION = "app/hand_landmarker.task"
-LABELS_LOCATION = "app/input/labels.csv"
+LABELS_LOCATION = "app/extraction/input/labels.csv"
+INPUT_DIR       = "app/extraction/input/"#filtered_videos/"
+OUTPUT_DIR      = "app/extraction/output/"
+MODEL_LOCATION  = "app/hand_landmarker.task"
 
 
 def build_header_mean_std() -> List[Any]:
@@ -247,7 +247,7 @@ def extract_and_convert_videos() -> List[Video]:
 
 def extract_and_save():
     videos = extract_and_convert_videos()
-    
+
     n = 1
     total = len(videos)
 
@@ -277,4 +277,5 @@ def load_and_aggregate():
 
 if __name__ == "__main__":
     #extract_and_save()
-    load_and_aggregate()
+    #load_and_aggregate()
+    pass

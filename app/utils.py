@@ -69,6 +69,7 @@ class MP_model:
 
         if running_mode is self.RunningMode.LIVE_STREAM:
             self.latest_frame = None
+            self.latest_result = None
             self.frame_lock = threading.Lock()
 
             def print_result(result, output_image_rgb: mp.Image, timestamp_ms: int):
@@ -76,6 +77,7 @@ class MP_model:
                 annotated_image_rgb = draw_landmarks_on_image(output_image_rgb.numpy_view(), result)
                 with self.frame_lock:
                     self.latest_frame = annotated_image_rgb
+                    self.latest_result = result
 
             options = HandLandmarkerOptions(
                 base_options=BaseOptions(model_asset_path=self.model_path),

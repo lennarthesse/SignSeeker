@@ -2,7 +2,7 @@
 Utilities for the AI package containing classes like Video or MP_Model
 """
 
-from typing import List
+from typing import List, Tuple, Any
 from enum import Enum
 import threading
 
@@ -12,34 +12,17 @@ import mediapipe as mp
 import numpy as np
 import cv2
 
+
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 HandLandmarkerResult = mp.tasks.vision.HandLandmarkerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
 
-# DELETE THIS IF NO PROBLEMS OCCUR FROM REMOVING
-#def normalize_name(name: str) -> str:
-#    """
-#    Normalizes a file name by replacing %xx escapes by their single-character
-#    equivalent and certain special characters and normalizing unicode characters.
-#    
-#    :param name: The name to normalize.
-#    :type name: str
-#    :return: The normalized name.
-#    :rtype: str
-#    """
-#    name = os.path.basename(name)
-#    name = urllib.parse.unquote(name)
-#    name = unicodedata.normalize("NFKC", name)
-#    name = (
-#        name.replace("•", "")
-#            .replace(" ", "_")
-#            .replace("/", "_")
-#    )
-#    return name.lower()
 
-
+# ------- #
+# CLASSES #
+# ------- #
 class Video:
     def __init__(
             self,
@@ -94,6 +77,176 @@ class MP_model:
                 num_hands=2)
             
             self.landmarker = HandLandmarker.create_from_options(options)
+
+
+# ------------------- #
+# FEATURE AGGREGATION #
+# ------------------- #
+LANDMARK_INDICES = [
+     5,  8,
+     9, 12,
+    13, 16,
+    17, 20,
+     1,  4
+]
+HANDS = ["l", "r"]
+COORDS = ["x", "y", "z"]
+STATS = ["mean", "std"]
+LEFT_SLOT = 0
+RIGHT_SLOT = 1
+FILL_VALUE = -11111111
+
+
+def build_header_mean_std() -> List[Any]:
+    header = []
+
+    for hand in HANDS:
+        for landmark_idx in range(21):
+            if landmark_idx in LANDMARK_INDICES:
+                for coord in COORDS:
+                    for stat in STATS:
+                        header.append(f"{hand}_{coord}_{landmark_idx}_{stat}")
+    
+    for hand in HANDS:
+        for coord in COORDS:
+            for stat in STATS:
+                header.append(f"{hand}_root_{coord}_{stat}")
+
+    header.append("label")
+
+    return header
+
+
+def build_row_mean_std(vid: Video) -> List[Any]:
+    slots, root_slots = _get_slots(vid)
+
+    row = _aggregate_features(slots, root_slots)
+    row.append(vid.label)
+
+    return row
+
+
+def _get_slots(video: Video) -> Tuple[List[Any], List[Any]]:
+    slots = [[], []]
+    root_slots = [[], []]
+
+    for landmarker_result in video.landmarker_results:
+        # skip empty results
+        if len(landmarker_result.hand_world_landmarks) == 0:
+            continue
+
+        # assign landmarks in result to either left or right hand
+        assignment = [None, None]       # this is a list of List[Landmark]      (list of landmarks of an entire hand)
+        root_assignment = [None, None]  # this is a list of NormalizedLandmark  (list of root landmarks)
+        for hand_idx in range(len(landmarker_result.hand_world_landmarks)):
+            landmarks = landmarker_result.hand_world_landmarks[hand_idx]
+            root_landmark = landmarker_result.hand_landmarks[hand_idx][0]
+            handedness = landmarker_result.handedness[hand_idx][0].category_name
+
+            # decide preferred slot
+            preferred_slot = LEFT_SLOT if handedness.lower() == "left" else RIGHT_SLOT
+
+            if assignment[preferred_slot] is None:
+                assignment[preferred_slot] = landmarks
+            else:
+                other_slot = RIGHT_SLOT if preferred_slot == LEFT_SLOT else LEFT_SLOT
+                if assignment[other_slot] is None:
+                    assignment[other_slot] = landmarks
+
+            if root_assignment[preferred_slot] is None:
+                root_assignment[preferred_slot] = root_landmark
+            else:
+                other_slot = RIGHT_SLOT if preferred_slot == LEFT_SLOT else LEFT_SLOT
+                if root_assignment[other_slot] is None:
+                    root_assignment[other_slot] = root_landmark
+
+        # collect results of left hands
+        if assignment[LEFT_SLOT] is not None:
+            slots[LEFT_SLOT].append(assignment[LEFT_SLOT])
+        if root_assignment[LEFT_SLOT] is not None:
+            root_slots[LEFT_SLOT].append(root_assignment[LEFT_SLOT])
+
+        # collect results of right hands
+        if assignment[RIGHT_SLOT] is not None:
+            slots[RIGHT_SLOT].append(assignment[RIGHT_SLOT])
+        if root_assignment[RIGHT_SLOT] is not None:
+            root_slots[RIGHT_SLOT].append(root_assignment[RIGHT_SLOT])
+    
+    return slots, root_slots
+
+
+def _aggregate_features(slots: List[Any], root_slots: List[Any]) -> List[Any]:
+    # aggregate mean, min, max for each coordinate
+    features = []
+
+    for slot in slots:
+        if len(slot) == 0:
+            # fill with fill value if no hand was detected in the entire video
+            features.extend([FILL_VALUE] * len(LANDMARK_INDICES) * len(COORDS) * len(STATS))
+            continue
+
+        buckets = [{"x": [], "y": [], "z": []} for _ in range(21)]
+
+        for landmarks in slot:
+            for idx, landmark in enumerate(landmarks):
+                if idx in LANDMARK_INDICES:
+                    buckets[idx]["x"].append(landmark.x)
+                    buckets[idx]["y"].append(landmark.y)
+                    buckets[idx]["z"].append(landmark.z)
+
+        for idx, bucket in enumerate(buckets):
+            if idx in LANDMARK_INDICES:
+                for coord in COORDS:
+                    values = np.array(bucket[coord])
+                    # replace values.min() and .max() with values.std() for use with standard deviation. also adjust the STATS constant!
+                    features.extend([
+                        values.mean(),
+                        values.std()
+                    ])
+        
+    for root_slot in root_slots:
+        if len(root_slot) == 0:
+            features.extend([FILL_VALUE] * len(COORDS) * len(STATS))
+            continue
+        
+        bucket = {"x": [], "y": [], "z": []}
+
+        for landmark in root_slot:
+            bucket["x"].append(landmark.x)
+            bucket["y"].append(landmark.y)
+            bucket["z"].append(landmark.z)
+
+        for coord in COORDS:
+            values = np.array(bucket[coord])
+            features.extend([
+                values.mean(),
+                values.std()
+            ])
+
+    return features
+
+
+# DELETE THIS IF NO PROBLEMS OCCUR FROM REMOVING
+#def normalize_name(name: str) -> str:
+#    """
+#    Normalizes a file name by replacing %xx escapes by their single-character
+#    equivalent and certain special characters and normalizing unicode characters.
+#    
+#    :param name: The name to normalize.
+#    :type name: str
+#    :return: The normalized name.
+#    :rtype: str
+#    """
+#    name = os.path.basename(name)
+#    name = urllib.parse.unquote(name)
+#    name = unicodedata.normalize("NFKC", name)
+#    name = (
+#        name.replace("•", "")
+#            .replace(" ", "_")
+#            .replace("/", "_")
+#    )
+#    return name.lower()
+
 
 
 def convert_frame_to_mp_image(bgr_frame: cv2.typing.MatLike) -> mp.Image:

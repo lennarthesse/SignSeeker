@@ -22,7 +22,7 @@ This module contains functions to filter and copy videos from the original datas
 
 5. `OUTPUT_DIR`: Where to copy the filtered videos to.
 
-You will have to set `INPUT_DIR` to point to the location where you store your video files and define the words you want to filter in `WORDS`
+You will have to set `INPUT_DIR` to point to the location where you store your video files and define the words you want to filter in `WORDS`.
 
 Now you can run the script:
 
@@ -33,4 +33,26 @@ $ python -m app.extraction.utils
 This will filter the words specified in `WORDS` from the original CSV file and create a new one. Then the videos contained in this file are copied into the output folder.
 
 ## Extract Landmarks from Videos
+
+To extract landmarks from the videos and save them as video objects, use the module `app.extraction.video_extractor`. There are four setup variables:
+
+1. `LABELS_LOCATION`: Location of the CSV file storing the labels for each video. For faster execution use your filtered CSV file.
+
+2. `INPUT_DIR`: Location of the videos you want to extract landmarks from.
+
+3. `OUTPUT_DIR`: Where to save the extracted video objects to.
+
+4. `MODEL_LOCATION`: Location of the MediaPipe landmarker model.
+
+Check that `INPUT_DIR` points to the directory that contains all the videos you want to extract data from. If you used `app.extraction.utils` to copy a filtered list of videos those videos will be in the output directory.
+
+When everything is set up, you can run the script:
+
+```bash
+$ python -m app.extraction.video_extractor
+```
+
+This will extract the landmarks from all videos, create a video object for each one and save them to the disk.
+
+## Build CSV with Aggregated Features
 

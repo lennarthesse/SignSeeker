@@ -1,7 +1,29 @@
 """
 Utility module for the AI pipeline.
 """
+
+import joblib
 import pandas as pd
+from lightgbm import Booster
+from sklearn.preprocessing import LabelEncoder
+
+
+def load_model(model_file: str, encoder_file: str):
+    """
+    Docstring for load_model
+    
+    :param model_file: Path to a saved model file (.txt).
+    :type model_file: str
+    :param encoder_file: Path to a saved label encoder file (.pkl).
+    :type encoder_file: str
+    :return: A LightGBM Booster and a LabelEncoder if successfull, tuple[None, None] else.
+    :rtype: tuple[Booster, LabelEncoder]
+    """
+    print("Loading model and label encoder...", end=" ")
+    booster: Booster = Booster(model_file=model_file)
+    labelEncoder: LabelEncoder = joblib.load(encoder_file)
+    print("Done")
+    return booster, labelEncoder
 
 
 def load_X_y(csv_file: str, print_X_y=False):

@@ -1,36 +1,14 @@
 """
 Module for loading and running inference with a LightGBM classification model.
 """
-import joblib
+
 import numpy as np
 
 from lightgbm import Booster
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 
-from app.model.utils import load_X_y
-
-
-def load_model(model_file: str, encoder_file: str):
-    """
-    Docstring for load_model
-    
-    :param model_file: Path to a saved model file (.txt).
-    :type model_file: str
-    :param encoder_file: Path to a saved label encoder file (.pkl).
-    :type encoder_file: str
-    :return: A LightGBM Booster and a LabelEncoder if successfull, tuple[None, None] else.
-    :rtype: tuple[Booster, LabelEncoder] | tuple[None, None]
-    """
-    try:
-        print("Loading model and label encoder...", end=" ")
-        booster: Booster = Booster(model_file=model_file)
-        labelEncoder: LabelEncoder = joblib.load(encoder_file)
-        print("Done")
-        return booster, labelEncoder
-    except:
-        print("\n[ERROR] Failed to load model and label encoder")
-        return None, None
+from app.model.utils import load_X_y, load_model
 
 
 def print_predictions(

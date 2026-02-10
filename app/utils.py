@@ -55,7 +55,7 @@ class MP_model:
             self.latest_result = None
             self.frame_lock = threading.Lock()
 
-            def print_result(result, output_image_rgb: mp.Image, timestamp_ms: int):
+            def print_result(result: HandLandmarkerResult, output_image_rgb: mp.Image, timestamp_ms: int): # type: ignore
                 #print('hand landmarker result: {}'.format(result))
                 annotated_image_rgb = draw_landmarks_on_image(output_image_rgb.numpy_view(), result)
                 with self.frame_lock:

@@ -1,4 +1,4 @@
-# mp-landmarks-to-csv
+# Sign Seeker
 
 This project uses a [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/guide) landmark detection model to analyze the hands in a set of input images/videos.
 

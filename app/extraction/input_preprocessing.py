@@ -1,5 +1,5 @@
 """
-Moduke for preparing the input videos for extraction.
+Module for preparing the input videos for extraction.
 """
 
 from typing import List, Dict

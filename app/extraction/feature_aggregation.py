@@ -1,17 +1,27 @@
+"""
+Module for aggregating video data into a CSV rows.
+"""
+
 import os
 import csv
 from typing import List, Any
 
 import joblib
 
-from app.utils import Video, build_header_mean_std, build_row_mean_std
+from app.utils import Video
+from app.utils import build_header_mean_std, build_row_mean_std
 
 
 OUTPUT_DIR = "app/extraction/output/"
 
 
 def _write_csv_file(rows: List[Any]):
-    # Initialize CSV file and writer and write the header row 
+    """
+    Writes a number of rows into a CSV file.
+    
+    :param rows: Rows to be written into the CSV file.
+    :type rows: List[Any]
+    """
     with open(OUTPUT_DIR + "table.csv", "w", newline="", encoding="utf-8") as csv_file:
         csv_writer = csv.writer(csv_file)
         csv_writer.writerow(build_header_mean_std())

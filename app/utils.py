@@ -83,11 +83,11 @@ class MP_model:
 # FEATURE AGGREGATION #
 # ------------------- #
 LANDMARK_INDICES = [
-     5,  8,
-     9, 12,
-    13, 16,
-    17, 20,
-     1,  4
+     5,  8, # index finger knuckle and tip
+     9, 12, # middle finger knuckle and tip
+    13, 16, # ring finger knuckle and tip
+    17, 20, # pinky finger knuckle and tip
+     1,  4  # thumb root and tip
 ]
 HANDS = ["l", "r"]
 COORDS = ["x", "y", "z"]
@@ -98,6 +98,12 @@ FILL_VALUE = -11111111
 
 
 def build_header_mean_std() -> List[Any]:
+    """
+    Builds a header for the training data that can be written into a CSV file.
+    
+    :return: List holding the column names.
+    :rtype: List[Any]
+    """
     header = []
 
     for hand in HANDS:
@@ -117,11 +123,19 @@ def build_header_mean_std() -> List[Any]:
     return header
 
 
-def build_row_mean_std(vid: Video) -> List[Any]:
-    slots, root_slots = _get_slots(vid)
+def build_row_mean_std(video: Video) -> List[Any]:
+    """
+    Builds a row containing the aggregated data of a video that can be written into a CSV file.
+    
+    :param video: Video object holding landmark and label data.
+    :type video: Video
+    :return: List holding the feature values of the row.
+    :rtype: List[Any]
+    """
+    slots, root_slots = _get_slots(video)
 
     row = _aggregate_features(slots, root_slots)
-    row.append(vid.label)
+    row.append(video.label)
 
     return row
 

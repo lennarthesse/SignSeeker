@@ -1,4 +1,4 @@
-# How to Extract Landmark Data from Videos
+# How to Extract Training Data from Videos
 
 *Package: app.extraction*
 
@@ -6,7 +6,15 @@ The extraction package is used to prepare the training data for the model. It ta
 
 ## Quickstart
 
-Lorem
+1. Point `INPUT_DIR` to your videos and define `WORDS` in `input_preprocessing`. 
+
+2. Run `python -m app.extraction.input_preprocessing`.
+
+3. Move the filtered video files into a directory named `filtered_videos` in the input directory.
+
+4. Run `python -m app.extraction.video_extraction`.
+
+5. Run `python -m app.extraction.feature_aggregation`.
 
 ## Filter Videos
 
@@ -28,7 +36,7 @@ The `input_preprocessing` module contains functions to filter and copy videos fr
 
 You will have to set `INPUT_DIR` to point to the location where you store your video files and define the words you want to filter in `WORDS`.
 
-Now you can run the script:
+Now you can run the module:
 
 ```bash
 $ python -m app.extraction.input_preprocessing
@@ -52,7 +60,7 @@ To extract landmarks from the videos and save them as video objects, use the mod
 
 Check that `INPUT_DIR` points to the directory that contains all the videos you want to extract data from. If you used the `input_preprocessing` module to copy a filtered list of videos those videos will be in the output directory.
 
-When everything is set up, you can run the script:
+When everything is set up, you can run the module:
 
 ```bash
 $ python -m app.extraction.video_extraction
@@ -62,3 +70,22 @@ This will extract the landmarks from all videos, create a video object for each 
 
 ## Build CSV with Aggregated Features
 
+*app.extraction.feature_aggregation*
+
+This module creates ready-to-use training data for the classification model from the extracted landmark data. It loads the saved `Video` objects from the `video_extraction` module and aggregates the features into a list of rows that are then written into a CSV file. There is one setup variable:
+
+1. `OUTPUT_DIR`: The location where a directory named `extracted_videos` can be found, containing the pickled `Video` objects.
+
+By default, this module looks for the extracted videos in the output directory of `video_extraction` and should work as is.
+
+To build the CSV file, run the module:
+
+```bash
+$ python -m app.extraction.feature_aggregation
+```
+
+This will create a CSV file with the aggregated data in the specified `OUTPUT_DIR`.
+
+### Filtering the Features
+
+To reduce the noise in the input features, the aggregation filters some less important landmarks. If you want to adjust which features to keep or ignore, you can do so by selecting the MediaPipe landmark indices in `app.utils.LANDMARK_INDICES`. This list defines which landmarks are used in the aggregation.

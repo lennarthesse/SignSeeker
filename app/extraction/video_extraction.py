@@ -1,3 +1,7 @@
+"""
+Module for extracting landmarks from videos and saving them as `Video` objects.
+"""
+
 import cv2
 import os
 import csv

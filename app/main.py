@@ -4,14 +4,15 @@ from collections import deque
 import numpy as np
 
 from app.utils import MP_model, Video
-from app.utils import convert_frame_to_mp_image
+from app.utils import convert_frame_to_mp_image, build_row_mean_std
 from app.model.inference import load_model
-from app.extraction.video_extractor import build_row_mean_std
+
 
 BUFFER_SIZE = 30
 MIN_PROBA = 0.8
-PREDICT_EVERY_N = 1
+PREDICT_EVERY_N = 10
 N = 0
+
 
 if __name__ == "__main__":
 

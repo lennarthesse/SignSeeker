@@ -1,5 +1,5 @@
 """
-Utilities for preparing the input videos for extraction
+Moduke for preparing the input videos for extraction.
 """
 
 from typing import List, Dict

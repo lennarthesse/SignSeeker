@@ -1,5 +1,5 @@
 """
-Module for loading and running inference with a LightGBM classification model.
+Module for loading and evaluation a LightGBM classification model.
 """
 
 import numpy as np

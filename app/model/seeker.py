@@ -1,4 +1,4 @@
-"""Module providing a high-level interface to the extraction and classification logic."""
+"""Module providing a high-level interface to the live extraction and classification logic."""
 
 from collections import deque
 from typing import Union, Tuple, List
@@ -11,10 +11,11 @@ from app.utils import MP_model, Video
 from app.utils import convert_frame_to_mp_image, build_row_mean_std
 from app.model.utils import load_model
 
-
+# these values seem to be working well but aren't optimzed yet
 BUFFER_SIZE = 30
-MIN_PROBA = 0.08
-PREDICT_EVERY_N = 5
+MIN_PROBA = 0.8
+PREDICT_EVERY_N = 2
+
 
 class SignSeeker:
     """
@@ -33,6 +34,7 @@ class SignSeeker:
         return self
 
     def __exit__(self, type, value, traceback):
+        # this might need to go deeper. maybe try to shut the actual handlandmarker down in the class
         del self._mp_model
     
     def batch_infer(self, bgr_frames: List[MatLike]) -> Union[Tuple[str, float], Tuple[None, None]]:

@@ -3,7 +3,7 @@ This module loads the entire asl dataset (100.000+ samples), trains a model and 
 """
 from sklearn.model_selection import train_test_split
 
-import inference
+import app.model.evaluation as evaluation
 from utils import load_X_y
 from training import train_model
 
@@ -17,12 +17,12 @@ def train_and_evaluate():
     MODEL_NAME = "2k_v1"
 
     if train_model(X_train, y_train, MODEL_NAME):
-        booster, labelEncoder = inference.load_model(f"{MODEL_NAME}_model.txt", f"{MODEL_NAME}_labelEncoder.pkl")
+        booster, labelEncoder = evaluation.load_model(f"{MODEL_NAME}_model.txt", f"{MODEL_NAME}_labelEncoder.pkl")
 
         if not (booster is None or labelEncoder is None):
             print(f"Number of classes: {len(labelEncoder.classes_)}")
             
-            inference.evaluate_model(X_test, y_test, booster, labelEncoder)
+            evaluation.evaluate_model(X_test, y_test, booster, labelEncoder)
 
 
 if __name__ == "__main__":

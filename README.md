@@ -10,12 +10,31 @@ At the moment we are using this script to get structured and labeled landmark da
 
 ## Installation
 
-1. Create a virtual environment (optional):
+1. Clone the repository:
+    
+    - `git clone https://github.com/lennarthesse/mp-landmarks-to-csv.git`
+
+2. Create a virtual environment (optional):
+
     - `python3 -m venv .env`
+
     - `source .env/bin/activate`
 
-2. Install dependencies:
+3. Install dependencies:
+
     - `pip install -r requirements.txt`
+
+## Usage
+
+To use the classification model, import the `SignSeeker` class:
+
+```python
+from app.model.seeker import SignSeeker
+```
+
+...
+
+If you want to train your own model, consult the documentation starting with [How to Extract Training Data from Videos](./docs/extraction.md).
 
 ## Preparing the input data
 

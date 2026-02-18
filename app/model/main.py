@@ -3,26 +3,26 @@ This module loads the entire asl dataset (100.000+ samples), trains a model and 
 """
 from sklearn.model_selection import train_test_split
 
-import app.model.evaluation as evaluation
-from utils import load_X_y
-from training import train_model
+from app.model.evaluation import evaluate_model
+from app.model.utils import load_X_y, load_model
+from app.model.training import train_model
 
 
 def train_and_evaluate():
-    X_train, y_train = load_X_y("table_knuckles+tips.csv")
-    X_test, y_test = load_X_y("table_knuckles+tips_test.csv")
+    X_train, y_train = load_X_y("app/model/table_knuckles+tips_train.csv")
+    X_test, y_test = load_X_y("app/model/table_knuckles+tips_test.csv")
     
     #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
 
-    MODEL_NAME = "2k_v1"
+    MODEL_NAME = "eval_test"
 
     if train_model(X_train, y_train, MODEL_NAME):
-        booster, labelEncoder = evaluation.load_model(f"{MODEL_NAME}_model.txt", f"{MODEL_NAME}_labelEncoder.pkl")
+        booster, labelEncoder = load_model(f"{MODEL_NAME}_model.txt", f"{MODEL_NAME}_labelEncoder.pkl")
 
         if not (booster is None or labelEncoder is None):
             print(f"Number of classes: {len(labelEncoder.classes_)}")
             
-            evaluation.evaluate_model(X_test, y_test, booster, labelEncoder)
+            evaluate_model(X_test, y_test, booster, labelEncoder)
 
 
 if __name__ == "__main__":

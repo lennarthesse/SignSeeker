@@ -14,7 +14,7 @@ from app.model.utils import load_model
 # these values seem to be working well but aren't optimzed yet
 BUFFER_SIZE = 30
 MIN_PROBA = 0.8
-PREDICT_EVERY_N = 2
+PREDICT_EVERY_N = 5
 
 
 class SignSeeker:

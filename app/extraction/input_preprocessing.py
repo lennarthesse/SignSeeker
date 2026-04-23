@@ -9,10 +9,10 @@ import csv
 import os
 
 
-WORDS           = ["hello", "learn", "sign", "language", "america", "like", "fun", "and", "what", "who", "where", "how", "good", "bad", "you"]
+WORDS           = ["hello", "nice", "meet", "you", "me", "like", "learn", "sign", "y", "e", "s", "how"]
 FULL_CSV        = Path("app/extraction/input/labels.csv")
 FILTERED_CSV    = Path("app/extraction/input/filtered_labels.csv")
-INPUT_DIR       = Path("/path/to/all_videos")
+INPUT_DIR       = Path("/media/lennart/Data/Files/Documents/Studium/HS Harz/6. Semester/Jahresprojekt/datasets/ZahidYasinMittha/American-Sign-Language-Dataset/all_videos")
 OUTPUT_DIR      = Path("app/extraction/output/filtered_videos")
 
 

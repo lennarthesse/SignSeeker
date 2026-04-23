@@ -23,7 +23,7 @@ class SignSeeker:
     """
     def __init__(self):
         self._mp_model = MP_model("app/hand_landmarker.task", MP_model.RunningMode.LIVE_STREAM)
-        self._classification_model, self._label_encoder = load_model("app/model/2k_v1_model.txt", "app/model/2k_v1_labelEncoder.pkl")
+        self._classification_model, self._label_encoder = load_model("app/model/unit1_model.txt", "app/model/unit1_labelEncoder.pkl")
         self._buffer = deque(maxlen=BUFFER_SIZE)
         self._time = 0
         self._n = 0

@@ -8,7 +8,7 @@ from sklearn.preprocessing import LabelEncoder
 from app.model.utils import load_X_y
 
 
-TRAIN_DATA = "train.csv"
+TRAIN_DATA = "app/extraction/output/table.csv"
 
 
 def train_model(X_train, y_train, model_name: str ="") -> bool:
@@ -78,4 +78,4 @@ def train_model(X_train, y_train, model_name: str ="") -> bool:
 
 if __name__ == "__main__":
     X, y = load_X_y(TRAIN_DATA)
-    train_model(X, y, "my_model")
+    train_model(X, y, "unit1")

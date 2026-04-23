@@ -16,7 +16,7 @@ from app.utils import convert_frame_to_mp_image, draw_landmarks_on_image
 
 
 LABELS_LOCATION = "app/extraction/input/labels.csv"
-INPUT_DIR       = "app/extraction/input/filtered_videos/"
+INPUT_DIR       = "app/extraction/output/filtered_videos/"
 OUTPUT_DIR      = "app/extraction/output/"
 MODEL_LOCATION  = "app/hand_landmarker.task"
 

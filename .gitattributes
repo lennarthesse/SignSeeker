@@ -1,0 +1,2 @@
+# Keep LightGBM model files as LF
+*model.txt text eol=lf

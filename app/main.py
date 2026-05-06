@@ -5,7 +5,7 @@ from app.seeker import SignSeeker
 
 if __name__ == "__main__":
 
-    with SignSeeker() as skr:
+    with SignSeeker("app/hand_landmarker.task", "app/model/unit1_model.txt", "app/model/unit1_labelEncoder.pkl") as skr:
 
         cap = cv2.VideoCapture(0)
 

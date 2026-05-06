@@ -20,9 +20,9 @@ class SignSeeker:
     """
     An extraction and classification model providing functionality for obtaining sign predictions from video frames.
     """
-    def __init__(self):
-        self._mp_model = MP_model("app/hand_landmarker.task", MP_model.RunningMode.LIVE_STREAM)
-        self._classification_model, self._label_encoder = load_model("app/model/unit1_model.txt", "app/model/unit1_labelEncoder.pkl")
+    def __init__(self, mp_model_path: str, classification_model_path: str, label_encoder_path: str):
+        self._mp_model = MP_model(mp_model_path, MP_model.RunningMode.LIVE_STREAM)
+        self._classification_model, self._label_encoder = load_model(classification_model_path, label_encoder_path)
         self._buffer = deque(maxlen=BUFFER_SIZE)
         self._time = 0
         self._n = 0

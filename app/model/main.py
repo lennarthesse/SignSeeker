@@ -3,8 +3,8 @@ This module loads the entire asl dataset (100.000+ samples), trains a model and 
 """
 from sklearn.model_selection import train_test_split
 
+from app.utils import load_X_y, load_model
 from app.model.evaluation import evaluate_model
-from app.model.utils import load_X_y, load_model
 from app.model.training import train_model
 
 

@@ -7,9 +7,8 @@ import numpy as np
 import cv2
 from cv2.typing import MatLike
 
-from app.utils import MP_model, Video
-from app.utils import convert_frame_to_mp_image, build_row_mean_std
-from app.model.utils import load_model
+from .utils import MP_model, Video
+from .utils import convert_frame_to_mp_image, build_row_mean_std, load_model
 
 # these values seem to be working well but aren't optimzed yet
 BUFFER_SIZE = 30

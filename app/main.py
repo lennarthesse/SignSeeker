@@ -1,6 +1,6 @@
 import cv2
 
-from app.model.seeker import SignSeeker
+from app.seeker import SignSeeker
 
 
 if __name__ == "__main__":

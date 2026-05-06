@@ -5,7 +5,7 @@ import joblib
 import lightgbm as lgb
 from sklearn.preprocessing import LabelEncoder
 
-from app.model.utils import load_X_y
+from app.utils import load_X_y
 
 
 TRAIN_DATA = "app/extraction/output/table.csv"

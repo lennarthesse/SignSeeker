@@ -12,8 +12,8 @@ from .utils import convert_frame_to_mp_image, build_row_mean_std, load_model
 
 # these values seem to be working well but aren't optimzed yet
 BUFFER_SIZE = 30
-MIN_PROBA = 0.8
-PREDICT_EVERY_N = 5
+MIN_PROBA = 0.95
+PREDICT_EVERY_N = 10
 
 
 class SignSeeker:
@@ -26,6 +26,7 @@ class SignSeeker:
         self._buffer = deque(maxlen=BUFFER_SIZE)
         self._time = 0
         self._n = 0
+        self.min_proba = MIN_PROBA
 
         self.latest_frame_bgr = None
 
@@ -56,21 +57,17 @@ class SignSeeker:
         :return: Predicted label and associated probability or (None, None)
         :rtype: Tuple[str, float] | Tuple[None, None]
         """
-        mp_image_rgb = convert_frame_to_mp_image(bgr_frame)
-        self._mp_model.landmarker.detect_async(mp_image_rgb, self._time)
-        self._time += 1
+        self.preview(bgr_frame)
         self._n += 1
 
-        result, frame = None, None
+        result = None
 
         with self._mp_model.frame_lock:
-            if self._mp_model.latest_frame is not None and self._mp_model.latest_result is not None:
+            if self._mp_model.latest_result is not None:
                 result = self._mp_model.latest_result
-                frame = self._mp_model.latest_frame
 
-        if result is not None and frame is not None:
+        if result is not None:
             self._buffer.append(result)
-            self.latest_frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
             if len(self._buffer) >= BUFFER_SIZE and self._n >= PREDICT_EVERY_N:
                 self._n = 0
@@ -89,3 +86,20 @@ class SignSeeker:
                     return top_label, top_probability
         
         return None, None
+
+    def preview(self, bgr_frame: MatLike) -> MatLike | None:
+        mp_image_rgb = convert_frame_to_mp_image(bgr_frame)
+        self._mp_model.landmarker.detect_async(mp_image_rgb, self._time)
+        self._time += 1
+
+        frame = None
+
+        with self._mp_model.frame_lock:
+            if self._mp_model.latest_frame is not None:
+                frame = self._mp_model.latest_frame
+
+        if frame is not None:
+            self.latest_frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            return self.latest_frame_bgr
+
+        return None

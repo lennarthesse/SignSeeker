@@ -55,7 +55,7 @@ class SignSeeker:
         :return: Predicted label and associated probability or (None, None)
         :rtype: Tuple[str, float] | Tuple[None, None]
         """
-        self.preview(bgr_frame)
+        self.preview(bgr_frame, clear_buffer=False)
         self._n += 1
 
         result = None
@@ -84,7 +84,10 @@ class SignSeeker:
         
         return None, None
 
-    def preview(self, bgr_frame: MatLike) -> MatLike | None:
+    def preview(self, bgr_frame: MatLike, clear_buffer: bool = True) -> MatLike | None:
+        if clear_buffer:
+            self._buffer.clear()
+        
         mp_image_rgb = convert_frame_to_mp_image(bgr_frame)
         self._mp_model.landmarker.detect_async(mp_image_rgb, self._time)
         self._time += 1

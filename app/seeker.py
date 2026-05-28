@@ -11,8 +11,7 @@ from .utils import MP_model, Video
 from .utils import convert_frame_to_mp_image, build_row_mean_std, load_model
 
 # these values seem to be working well but aren't optimzed yet
-BUFFER_SIZE = 30
-MIN_PROBA = 0.95
+BUFFER_SIZE = 50
 PREDICT_EVERY_N = 10
 
 
@@ -26,7 +25,6 @@ class SignSeeker:
         self._buffer = deque(maxlen=BUFFER_SIZE)
         self._time = 0
         self._n = 0
-        self.min_proba = MIN_PROBA
 
         self.latest_frame_bgr = None
 
@@ -82,8 +80,7 @@ class SignSeeker:
                 top_label = self._label_encoder.inverse_transform([top_prediction])[0]
                 top_probability = probabilities[0, top_prediction]
 
-                if top_probability > MIN_PROBA:
-                    return top_label, top_probability
+                return top_label, top_probability
         
         return None, None
 
